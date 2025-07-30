@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 import type { ChatMessage } from '@/lib/ai/types'
 import { useChatStream } from '@/hooks/use-chat-stream'
@@ -52,11 +52,18 @@ export function ChatWindow({
         }}
         className="flex border-t bg-background p-4"
       >
-        <Input
+        <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              sendMessage()
+            }
+          }}
           placeholder="Type your message..."
-          className="mr-2 flex-1"
+          className="mr-2 flex-1 resize-none"
+          rows={1}
         />
         <Button type="submit" disabled={isLoading || !input.trim()}>
           Send
