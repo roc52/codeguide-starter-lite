@@ -26,7 +26,7 @@ jest.mock(
 
 // ---------- Mock Anthropic SDK ----------
 jest.mock(
-  'anthropic',
+  '@anthropic-ai/sdk',
   () => {
     return function MockAnthropic() {
       return {

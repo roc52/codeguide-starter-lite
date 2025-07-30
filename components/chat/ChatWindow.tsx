@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 import type { ChatMessage } from '@/lib/ai/types'
 import { useChatStream } from '@/hooks/use-chat-stream'
@@ -31,11 +31,17 @@ export function ChatWindow({
   } = useChatStream({ conversationId, provider, model, initialMessages })
 
   const bottomRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLTextAreaElement | null>(null)
 
   // scroll to bottom when messages change
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // auto focus when component mounts
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
 
   return (
     <div className="flex h-full flex-col">
@@ -52,14 +58,22 @@ export function ChatWindow({
         }}
         className="flex border-t bg-background p-4"
       >
-        <Input
+        <Textarea
+          ref={inputRef}
           value={input}
+          rows={1}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              sendMessage()
+            }
+          }}
           placeholder="Type your message..."
-          className="mr-2 flex-1"
+          className="mr-2 flex-1 resize-none"
         />
         <Button type="submit" disabled={isLoading || !input.trim()}>
-          Send
+          {isLoading ? '...' : 'Send'}
         </Button>
       </form>
     </div>
