@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react'
 
 import type { ChatMessage } from '@/lib/ai/types'
 
@@ -20,6 +20,11 @@ interface UseChatStreamReturn {
   isLoading: boolean
 }
 
+interface UserKeyMap {
+  openai?: string
+  anthropic?: string
+}
+
 /**
 * Small client-side hook that handles:
 * 1. Local optimistic update for the user message.
@@ -35,6 +40,28 @@ export function useChatStream({
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // Cache user-scoped API keys (loaded once per component mount)
+  const [userKeys, setUserKeys] = useState<UserKeyMap>({})
+
+  // Prefetch user keys on mount so that subsequent sends include them.
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const res = await fetch('/api/user-api-key')
+        if (res.ok) {
+          const data = await res.json()
+          const map: UserKeyMap = {}
+          for (const row of data.keys ?? []) {
+            map[row.provider as keyof UserKeyMap] = row.api_key_encrypted
+          }
+          setUserKeys(map)
+        }
+      } catch (_) {
+        // Silently ignore – fallback to project-level key.
+      }
+    })()
+  }, [])
 
   // keep a ref to avoid stale closure when streaming tokens
   const assistantIndexRef = useRef<number | null>(null)
@@ -55,6 +82,7 @@ export function useChatStream({
       conversationId,
       provider,
       model,
+      userApiKey: (userKeys as Record<string, string | undefined>)[provider],
     }
 
     try {

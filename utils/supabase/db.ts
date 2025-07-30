@@ -97,3 +97,55 @@ export async function touchConversation(
     .eq('id', conversationId)
 }
 
+// ---------------------------------------------------------------------------
+// User-scoped API key helpers (Milestone 5)
+// ---------------------------------------------------------------------------
+
+export type ProviderId = 'openai' | 'anthropic'
+
+export interface UserApiKey {
+  user_id: string
+  provider: ProviderId
+  api_key_encrypted: string
+}
+
+/**
+* Return the *plain* API key for the given provider that belongs to the
+* currently authenticated user (RLS enforced).
+*/
+export async function getUserApiKey(
+  client: SupabaseClient<any>,
+  provider: ProviderId,
+) {
+  return client
+    .from('user_api_keys')
+    .select('api_key_encrypted')
+    .eq('provider', provider)
+    .maybeSingle()
+}
+
+/**
+* Upsert a user-scoped API key. The table (DDL) is expected to have a
+* composite unique constraint on `(user_id, provider)` so that `upsert` does
+* the right thing.
+*/
+export async function upsertUserApiKey(
+  client: SupabaseClient<any>,
+  provider: ProviderId,
+  apiKey: string,
+) {
+  return client
+    .from('user_api_keys')
+    .upsert(
+      {
+        provider,
+        api_key_encrypted: apiKey,
+      },
+      {
+        onConflict: 'user_id,provider',
+      },
+    )
+    .select('*')
+    .single()
+}
+
