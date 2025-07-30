@@ -2,23 +2,27 @@ import { openaiProvider } from '@/lib/ai/providers/openai'
 import { anthropicProvider } from '@/lib/ai/providers/anthropic'
 
 // ---------- Mock OpenAI SDK ----------
-jest.mock('openai', () => {
-  return function MockOpenAI() {
-    return {
-      chat: {
-        completions: {
-          create: async () => {
-            async function* stream() {
-              yield { choices: [{ delta: { content: 'Hello ' } }] }
-              yield { choices: [{ delta: { content: 'World' } }] }
-            }
-            return stream()
+jest.mock(
+  'openai',
+  () => {
+    return function MockOpenAI() {
+      return {
+        chat: {
+          completions: {
+            create: async () => {
+              async function* stream() {
+                yield { choices: [{ delta: { content: 'Hello ' } }] }
+                yield { choices: [{ delta: { content: 'World' } }] }
+              }
+              return stream()
+            },
           },
         },
-      },
+      }
     }
-  }
-})
+  },
+  { virtual: true },
+)
 
 // ---------- Mock Anthropic SDK ----------
 jest.mock(
