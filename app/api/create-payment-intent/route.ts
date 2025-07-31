@@ -36,8 +36,13 @@ export async function POST(req: NextRequest) {
       currency: currency.toLowerCase(), // Stripe expects lowercase
     });
     return NextResponse.json({ clientSecret: paymentIntent.client_secret });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle malformed JSON and Stripe errors
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    const message =
+      error && typeof error === 'object' && 'message' in error
+        ? // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          (error as { message?: string }).message || 'Internal server error'
+        : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
